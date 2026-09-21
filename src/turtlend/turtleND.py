@@ -15,7 +15,6 @@ a geometric, frame-based alternative to gradient descent.
 Author: Eric G. Suchanek, PhD
 Affiliation: Flux-Frontiers, https://github.com/Flux-Frontiers
 License: BSD-3-Clause
-Last revised: 2026-03-23 -egs-
 Based on the Turtle3D implementation.
 """
 

@@ -18,8 +18,9 @@ authors:
     email: suchanek@flux-frontiers.com
     affiliation: "Flux-Frontiers"
 version: "0.1.0"
-# No `doi` or `date-released` yet. Zenodo mints the DOI when it archives the
-# first GitHub release. Add the concept DOI then, not the version DOI.
+date-released: "2026-09-21"
+# No `doi` yet. Zenodo mints the DOI when it archives the first GitHub
+# release. Add the concept DOI then, not the version DOI.
 license: BSD-3-Clause
 repository-code: "https://github.com/Flux-Frontiers/turtlend"
 url: "https://flux-frontiers.github.io/turtlend/"

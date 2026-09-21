@@ -6,6 +6,8 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-09-21
+
 ### Added
 
 - `TurtleND`, `Turtle3D` and `Vector3D`, moved here from WaveRider 0.15.0 and
