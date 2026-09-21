@@ -1,0 +1,32 @@
+cff-version: "1.2.0"
+message: "If you use this software, please cite it using the metadata below."
+type: software
+title: "turtlend: Orthonormal-Frame Turtles in 3 and N Dimensions"
+abstract: >
+  turtlend provides TurtleND, a turtle that carries a position and an
+  orthonormal frame through N-dimensional space. It moves along its heading,
+  rotates by Givens rotations in the plane of any two basis vectors, converts
+  points between global and turtle-local coordinates, and can add a dimension
+  to a live frame without rebuilding it. The package also provides Turtle3D,
+  the three-dimensional turtle that TurtleND generalizes, which builds
+  molecular geometry from bond lengths, bond angles and dihedral angles, and
+  the Vector3D class it is built on.
+authors:
+  - family-names: Suchanek
+    given-names: "Eric G., PhD"
+    orcid: "https://orcid.org/0009-0009-0891-1507"
+    email: suchanek@flux-frontiers.com
+    affiliation: "Flux-Frontiers"
+version: "0.1.0"
+# No `doi` or `date-released` yet. Zenodo mints the DOI when it archives the
+# first GitHub release. Add the concept DOI then, not the version DOI.
+license: BSD-3-Clause
+repository-code: "https://github.com/Flux-Frontiers/turtlend"
+url: "https://flux-frontiers.github.io/turtlend/"
+keywords:
+  - turtle-geometry
+  - orthonormal-frame
+  - givens-rotation
+  - n-dimensional
+  - manifold-navigation
+  - molecular-modeling

@@ -1,0 +1,62 @@
+site_name: turtlend
+site_description: A turtle that carries its own orthonormal frame through 3- or N-dimensional space.
+site_url: https://flux-frontiers.github.io/turtlend/
+repo_url: https://github.com/Flux-Frontiers/turtlend
+repo_name: Flux-Frontiers/turtlend
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.top
+    - content.code.copy
+    - content.action.edit
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.arithmatex:
+      generic: true
+  - tables
+  - toc:
+      permalink: true
+
+extra_javascript:
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: sphinx
+            show_source: true
+            show_root_heading: true
+            heading_level: 2
+            merge_init_into_class: true
+
+nav:
+  - Home: index.md
+  - Frame conventions: conventions.md
+  - API reference:
+      - TurtleND: api/turtleND.md
+      - Turtle3D: api/turtle3D.md
+      - Vector3D: api/vector3D.md

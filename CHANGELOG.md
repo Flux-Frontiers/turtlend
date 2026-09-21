@@ -16,6 +16,10 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   and the tape, and for the `Turtle3D` accessors, orientation methods and
   coordinate transforms. A 200-step random sequence checks that `Turtle3D` and
   `TurtleND(3)` agree.
+- A documentation site built with mkdocs and mkdocstrings: a frame-conventions
+  page and an API reference for all three modules.
+- `CITATION.cff`, and a release workflow that publishes to PyPI by trusted
+  publishing on a `v*` tag.
 
 ### Fixed
 
@@ -35,5 +39,7 @@ proteusPy called the affected paths.
 - `Turtle3D` type annotations use `numpy.ndarray` in place of the `numpy.array`
   function. `Turtle3D.unit` and `Turtle3D.Orientation` declare the types they
   return.
+- Docstrings drop `:type:` lines that repeated a signature annotation, and
+  `Turtle3D.new` no longer documents a `pen` parameter it does not have.
 - All three modules declare the BSD-3-Clause license. The WaveRider copies
   declared CC 4.0 and BSD in their headers.

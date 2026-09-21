@@ -73,7 +73,6 @@ class Turtle3D:
         :param head: Turtle's Heading vector, defaults to Vector(1,0,0)
         :param left: Turtle's Left vector, defaults to Vector(0,1,0)
         :param up: Turtle's Up vector, defaults to Vector(0,0,1)
-        :param pen: Pen state, defaults to 'up'
         :param recording: _description_, defaults to False
         """
         self._name = name
@@ -335,7 +334,6 @@ class Turtle3D:
         Move the Turtle distance (Å), in direction of Heading
 
         :param distance: Amount to move (Å)
-        :type distance: float
         """
         self._position = self._position + self._heading * distance
         self.pos = Vector(self._position)
@@ -470,11 +468,8 @@ class Turtle3D:
         Orients the turtle with Position at p1, Heading at p2 and Left at p3
 
         :param position: Position
-        :type position: numpy.ndarray
         :param heading: Heading direction vector
-        :type heading: numpy.ndarray
         :param left: Left direction vector
-        :type left: numpy.ndarray
         """
 
         self._position = position

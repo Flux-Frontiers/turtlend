@@ -234,9 +234,6 @@ def calc_angle(v1: Vector3D, v2: Vector3D, v3: Vector3D) -> float:
     :param v1: The first point that defines the angle.
     :param v2: The second point that defines the angle.
     :param v3: The third point that defines the angle.
-    :type v1: Vector3D
-    :type v2: Vector3D
-    :type v3: Vector3D
     :return: The angle between the three vectors in degrees.
     :rtype: float
 
@@ -261,10 +258,6 @@ def calc_dihedral(v1: Vector3D, v2: Vector3D, v3: Vector3D, v4: Vector3D) -> flo
     :param v2: The second point.
     :param v3: The third point.
     :param v4: The fourth point.
-    :type v1: Vector3D
-    :type v2: Vector3D
-    :type v3: Vector3D
-    :type v4: Vector3D
     :return: The dihedral angle in degrees.
     :rtype: float
 
@@ -297,8 +290,6 @@ def distance3d(p1: Vector3D, p2: Vector3D) -> float:
 
     :param p1: Point 1.
     :param p2: Point 2.
-    :type p1: Vector3D
-    :type p2: Vector3D
     :return: Distance between two points.
     :rtype: float
 
@@ -321,8 +312,6 @@ def rms_difference(calculated_angles: np.ndarray, idealized_angles: np.ndarray) 
 
     :param calculated_angles: An array of calculated angles.
     :param idealized_angles: An array of idealized angles.
-    :type calculated_angles: np.ndarray
-    :type idealized_angles: np.ndarray
     :return: The RMS difference between the calculated and idealized angles.
     :rtype: float
     :raises ValueError: If the input arrays do not have the same shape or are empty.

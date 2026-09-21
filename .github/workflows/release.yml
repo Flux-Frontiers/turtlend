@@ -1,0 +1,88 @@
+# Publish a GitHub Release and the PyPI package on tag push.
+#
+# Pushing a `v*` tag builds the wheel and sdist, creates the Release from
+# release-notes.md, and publishes those same two files to PyPI.
+#
+# The PyPI upload uses trusted publishing (OIDC), so there is no API token in
+# the repository secrets. It is configured on PyPI under the project's
+# Publishing settings and must name this repository, the workflow file
+# `release.yml`, and the `pypi` environment below. Change any of those three
+# and the upload stops.
+
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write  # needed to create the GitHub Release
+
+jobs:
+  release:
+    name: Build & Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      # The tag and the package version must agree, or PyPI receives a version
+      # the tag does not name.
+      - name: Check the tag matches the package version
+        run: |
+          VERSION="$(poetry version --short)"
+          if [ "v$VERSION" != "$GITHUB_REF_NAME" ]; then
+            echo "tag $GITHUB_REF_NAME does not match pyproject version $VERSION"
+            exit 1
+          fi
+
+      - name: Build wheel and sdist
+        run: poetry build
+
+      # Hand the built files to the publish job rather than letting it rebuild,
+      # so PyPI and the GitHub Release carry byte-identical artifacts.
+      - name: Stash dist for the publish job
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "turtlend $GITHUB_REF_NAME" \
+            --notes-file release-notes.md
+
+  publish:
+    name: Publish to PyPI
+    needs: release
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/turtlend
+    # Replaces the workflow-level `contents: write` for this job: publishing
+    # needs to mint an OIDC token and nothing else.
+    permissions:
+      id-token: write
+    steps:
+      - name: Fetch the artifacts the release job built
+        uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

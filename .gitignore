@@ -14,5 +14,8 @@ poetry.toml
 .coverage
 htmlcov/
 
+# mkdocs build output
+site/
+
 # macOS
 .DS_Store
