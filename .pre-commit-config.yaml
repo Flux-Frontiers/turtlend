@@ -1,0 +1,43 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+      - id: debug-statements
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.22
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+        pass_filenames: false
+        always_run: true
+      - id: ruff-format
+        pass_filenames: false
+        always_run: true
+
+  - repo: local
+    hooks:
+      # `.venv/bin/<tool>`, not `poetry run <tool>`: an inherited VIRTUAL_ENV
+      # from another repo redirects `poetry run` there. See FLEET_STANDARDS.md,
+      # "Pre-commit hooks call the venv directly".
+      - id: ty
+        name: ty
+        entry: .venv/bin/ty check src/ --python .venv
+        language: system
+        pass_filenames: false
+        always_run: true
+      # The whole suite runs in under a second, so it gates every commit.
+      - id: pytest
+        name: pytest
+        entry: .venv/bin/pytest --tb=short -q
+        language: system
+        pass_filenames: false
+        always_run: true

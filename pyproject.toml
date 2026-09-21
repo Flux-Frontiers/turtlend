@@ -1,0 +1,90 @@
+# pyproject.toml -- turtlend package configuration
+#
+# Author: Eric G. Suchanek, PhD
+#
+# Install
+# -------
+#   poetry install --with dev          package + test and lint tooling
+#   pip install -e .                   package only
+#
+# Run tests
+# ---------
+#   poetry install --with dev          prerequisite
+#   pytest                             uses [tool.pytest.ini_options]
+
+[build-system]
+requires = ["poetry-core>=2.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+packages = [{ include = "turtlend", from = "src" }]
+
+[project]
+name = "turtlend"
+version = "0.1.0"
+description = "A turtle that carries its own orthonormal frame through 3- or N-dimensional space"
+readme = "README.md"
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
+authors = [{ name = "Eric G. Suchanek, PhD", email = "suchanek@flux-frontiers.com" }]
+keywords = [
+    "turtle",
+    "turtle-geometry",
+    "coordinate-frame",
+    "givens-rotation",
+    "n-dimensional",
+    "manifold",
+    "embedding",
+    "molecular-modeling",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Typing :: Typed",
+]
+requires-python = ">=3.12,<3.14"
+
+# numpy is the whole runtime. waverider and proteusPy both depend on this
+# package, so anything added here lands in both of their locks.
+dependencies = ["numpy>=1.26"]
+
+[project.urls]
+Homepage = "https://github.com/Flux-Frontiers/turtlend"
+Repository = "https://github.com/Flux-Frontiers/turtlend"
+Issues = "https://github.com/Flux-Frontiers/turtlend/issues"
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=9.0.3"
+pytest-cov = ">=5.0"
+ruff = ">=0.15"
+ty = ">=0.0.41"
+pre-commit = ">=4.5.1"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --cov=turtlend --cov-report=term-missing --cov-fail-under=80"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# Turtle3D.new() takes Vector3D defaults. It normalizes them into new vectors
+# and never mutates or stores the defaults, so the shared instances are safe.
+"src/turtlend/turtle3D.py" = ["B008"]
+
+[tool.pycodekg]
+exclude = ["tests"]
+include = ["src"]
