@@ -19,11 +19,8 @@ authors:
     affiliation: "Flux-Frontiers"
 version: "0.1.1"
 date-released: "2026-09-21"
-# No `doi` yet. Zenodo mints the DOI when it archives the first GitHub
-# release. Uncomment the line below with the concept DOI (the API's
-# `conceptdoi`), not the version DOI shown on the record page, and change
-# the same placeholder in the README badge and BibTeX.
-# doi: "10.5281/zenodo.XXXXXXX"
+# The Zenodo concept DOI, which resolves to the newest archived release.
+doi: "10.5281/zenodo.22886555"
 license: BSD-3-Clause
 repository-code: "https://github.com/Flux-Frontiers/turtlend"
 url: "https://flux-frontiers.github.io/turtlend/"

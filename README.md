@@ -6,7 +6,7 @@
 [![Tests](https://github.com/Flux-Frontiers/turtlend/actions/workflows/tests.yml/badge.svg)](https://github.com/Flux-Frontiers/turtlend/actions/workflows/tests.yml)
 [![Docs](https://github.com/Flux-Frontiers/turtlend/actions/workflows/docs.yml/badge.svg)](https://flux-frontiers.github.io/turtlend/)
 [![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
-[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.XXXXXXX-blue.svg)](https://doi.org/10.5281/zenodo.XXXXXXX)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.22886555-blue.svg)](https://doi.org/10.5281/zenodo.22886555)
 [![ORCID](https://img.shields.io/badge/ORCID-0009--0009--0891--1507-A6CE39.svg)](https://orcid.org/0009-0009-0891-1507)
 
 A turtle that carries its own orthonormal frame through 3- or N-dimensional space.
@@ -115,16 +115,13 @@ under "Cite this repository". The equivalent BibTeX entry is:
   version = {0.1.1},
   year    = {2026},
   url     = {https://github.com/Flux-Frontiers/turtlend},
-  doi     = {10.5281/zenodo.XXXXXXX},
+  doi     = {10.5281/zenodo.22886555},
   license = {BSD-3-Clause}
 }
 ```
 
-`zenodo.XXXXXXX` is a placeholder. Zenodo mints the DOI when it archives the
-first GitHub Release; replace it with the concept DOI (the one that always
-resolves to the newest version, from the `conceptdoi` field of the Zenodo API,
-not the version DOI shown on the record page) here, in the badge above, and in
-`CITATION.cff`.
+The DOI is the Zenodo concept DOI, which always resolves to the newest
+archived release.
 
 An article describing the approach and the algorithms is in
 [articles/turtlend.tex](articles/turtlend.tex), with a compiled

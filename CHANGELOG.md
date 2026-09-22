@@ -6,6 +6,12 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- The `zenodo.XXXXXXX` placeholder in the README badge, the README BibTeX and
+  `CITATION.cff` is replaced by the Zenodo concept DOI,
+  `10.5281/zenodo.22886555`, minted when Zenodo archived the v0.1.1 release.
+
 ## [0.1.1] - 2026-09-21
 
 ### Added
