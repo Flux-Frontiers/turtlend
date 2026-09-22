@@ -1,5 +1,14 @@
 # turtlend
 
+[![PyPI](https://img.shields.io/pypi/v/turtlend.svg)](https://pypi.org/project/turtlend/)
+[![Python](https://img.shields.io/pypi/pyversions/turtlend.svg)](https://pypi.org/project/turtlend/)
+[![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](LICENSE)
+[![Tests](https://github.com/Flux-Frontiers/turtlend/actions/workflows/tests.yml/badge.svg)](https://github.com/Flux-Frontiers/turtlend/actions/workflows/tests.yml)
+[![Docs](https://github.com/Flux-Frontiers/turtlend/actions/workflows/docs.yml/badge.svg)](https://flux-frontiers.github.io/turtlend/)
+[![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.XXXXXXX-blue.svg)](https://doi.org/10.5281/zenodo.XXXXXXX)
+[![ORCID](https://img.shields.io/badge/ORCID-0009--0009--0891--1507-A6CE39.svg)](https://orcid.org/0009-0009-0891-1507)
+
 A turtle that carries its own orthonormal frame through 3- or N-dimensional space.
 
 `turtlend` provides three classes and depends only on NumPy:
@@ -93,6 +102,33 @@ the N, CA, CB and C atom positions as NumPy arrays.
 poetry install --with dev
 poetry run pytest
 ```
+
+## Cite
+
+The citation metadata is in [CITATION.cff](CITATION.cff); GitHub renders it
+under "Cite this repository". The equivalent BibTeX entry is:
+
+```bibtex
+@software{suchanek2026turtlend,
+  author  = {Suchanek, Eric G.},
+  title   = {turtlend: Orthonormal-Frame Turtles in 3 and N Dimensions},
+  version = {0.1.1},
+  year    = {2026},
+  url     = {https://github.com/Flux-Frontiers/turtlend},
+  doi     = {10.5281/zenodo.XXXXXXX},
+  license = {BSD-3-Clause}
+}
+```
+
+`zenodo.XXXXXXX` is a placeholder. Zenodo mints the DOI when it archives the
+first GitHub Release; replace it with the concept DOI (the one that always
+resolves to the newest version, from the `conceptdoi` field of the Zenodo API,
+not the version DOI shown on the record page) here, in the badge above, and in
+`CITATION.cff`.
+
+An article describing the approach and the algorithms is in
+[articles/turtlend.tex](articles/turtlend.tex), with a compiled
+[PDF](articles/turtlend.pdf).
 
 ## License
 

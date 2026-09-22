@@ -19,3 +19,15 @@ site/
 
 # macOS
 .DS_Store
+
+# LaTeX intermediates under articles/; the .tex, .bib and .pdf are tracked
+articles/*.aux
+articles/*.bbl
+articles/*.blg
+articles/*.fdb_latexmk
+articles/*.fls
+articles/*.log
+articles/*.out
+articles/*.toc
+articles/*.synctex.gz
+articles/build.log

@@ -1,0 +1,764 @@
+\documentclass[11pt,letterpaper]{article}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{geometry}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{bm}
+
+\geometry{margin=1in}
+\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}
+
+% --- Theorem environments ---
+\newtheorem{definition}{Definition}[section]
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}{Proposition}[section]
+\newtheorem{remark}{Remark}[section]
+
+% --- Notation macros ---
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\frm}{\mathbf{F}}
+\newcommand{\pos}{\mathbf{p}}
+\newcommand{\basis}{\mathbf{b}}
+\newcommand{\std}{\mathbf{e}}
+\newcommand{\eye}{\mathbf{I}}
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\op}[1]{\textup{\textsc{#1}}}
+
+\title{%
+  \textbf{TurtleND: A Turtle That Carries Its Own Orthonormal Frame} \\[6pt]
+  \large Frame-Based Navigation in Three and $N$ Dimensions \\
+  by Givens Rotations
+}
+
+\author{
+  Eric G. Suchanek, PhD \\
+  \texttt{suchanek@flux-frontiers.com} \\[4pt]
+  Flux-Frontiers \\
+  \url{https://github.com/Flux-Frontiers/turtlend}
+}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+A turtle is a moving point that carries its own coordinate system. It
+moves along its heading and rotates its frame; it never refers to global
+axes. This article describes \code{TurtleND}, a turtle that carries an
+orthonormal frame of $N$ basis vectors through $\R^N$ and rotates by
+Givens rotations in the plane of any two of them. The three-dimensional
+turtle it generalizes, \code{Turtle3D}, was written in C in 1990 for
+building protein structures from bond lengths, bond angles and dihedral
+angles. The $N$-dimensional version was written for navigating learned
+embedding spaces. We give the state, the operations and their
+definitions, the invariants they preserve, the conventions that make
+\code{TurtleND}$(3)$ agree with \code{Turtle3D} on every command, and
+the algorithms for orienting the frame to arbitrary directions,
+re-orthonormalizing it, and adding a dimension to a live turtle. The
+implementation is a NumPy package, \code{turtlend}, of about five hundred
+lines, with no other dependencies.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+%======================================================================
+\section{Introduction}
+\label{sec:intro}
+%======================================================================
+
+Turtle geometry, as Papert and later Abelson and diSessa presented it,
+replaces the Cartesian description of a path with an intrinsic one
+\citep{papert1980mindstorms, abelson1981turtle}. The turtle knows where
+it is and which way it faces. It moves forward some distance and turns
+through some angle, and a curve is the record of those commands. The
+description is local: it does not depend on where the origin is or how
+the axes are drawn.
+
+The three-dimensional turtle adds a second and third direction to the
+heading. With a heading, a left and an up vector, the turtle has a
+complete right-handed frame, and the commands become \op{Move},
+\op{Turn}, \op{Pitch} and \op{Roll}. This is exactly the
+description a chemist uses for a molecule. A bond has a length, the
+angle between two bonds is a bond angle, and the rotation about a bond
+is a dihedral. A turtle placed on an atom can walk to the next atom by
+one move, one yaw and one roll, with no reference to global coordinates
+at all. I wrote such a turtle in C in 1990 for the Proteus modeling
+program \citep{pabo1986computer}, ported it to Python for proteusPy
+\citep{suchanek2024proteuspy, suchanek2026disulfide}, and it has built
+thousands of disulfide bonds since.
+
+The generalization to $N$ dimensions came from a different problem.
+The WaveRider project \citep{suchanek2026waverider} navigates the
+embedding spaces produced by neural networks, where $N$ is in the
+hundreds or thousands, and where the data concentrate on a
+low-dimensional manifold whose tangent space changes from place to
+place. A turtle that carries $N$ orthonormal basis vectors, and that
+can align them to the local principal directions of the data, gives a
+moving coordinate system for such a space. The three-dimensional
+rotations become instances of one primitive, a Givens rotation in the
+plane of two basis vectors \citep{givens1958computation}.
+
+Both turtles lived as duplicate copies inside proteusPy and WaveRider
+until September 2026, when they were moved into a single package,
+\code{turtlend} \citep{suchanek2026turtlendsoftware}. This article is
+the description of that package. It covers the mathematics of the
+frame and its rotations (Section~\ref{sec:prelim}), the
+\code{TurtleND} state and operations (Section~\ref{sec:turtlend}), the
+conventions that make it agree with \code{Turtle3D}
+(Section~\ref{sec:compat}), the frame-construction algorithms
+(Section~\ref{sec:algorithms}), the numerical behavior
+(Section~\ref{sec:numerics}), and the two applications that motivated
+it (Section~\ref{sec:applications}). It does not cover the manifold
+navigation built on top of the turtle in WaveRider; that is the subject
+of the WaveRider article.
+
+%======================================================================
+\section{Mathematical Preliminaries}
+\label{sec:prelim}
+%======================================================================
+
+\begin{definition}[Orthonormal Frame]
+\label{def:frame}
+An \emph{orthonormal frame} in $\R^N$ is an ordered set of $N$ vectors
+$\frm = (\basis_0, \basis_1, \ldots, \basis_{N-1})$ with
+\begin{equation}
+  \langle \basis_i, \basis_j \rangle = \delta_{ij}
+  \qquad \forall\; i, j \in \{0, \ldots, N-1\},
+\end{equation}
+where $\delta_{ij}$ is the Kronecker delta. Equivalently, the matrix
+$F \in \R^{N \times N}$ whose rows are the $\basis_i$ satisfies
+$F F^\top = F^\top F = \eye_N$. We write $\std_i$ for the $i$-th
+standard basis vector of $\R^N$, so that the identity frame is
+$\frm = (\std_0, \ldots, \std_{N-1})$ and $F = \eye_N$.
+\end{definition}
+
+The row convention matters for what follows. With basis vectors as
+rows, the product $F \mathbf{v}$ is the vector of inner products
+$\langle \basis_i, \mathbf{v} \rangle$, which are the coordinates of
+$\mathbf{v}$ in the frame, and $F^\top \bm{\ell}$ is the linear
+combination $\sum_i \ell_i \basis_i$, which maps frame coordinates back
+to $\R^N$.
+
+\begin{definition}[Givens Rotation]
+\label{def:givens}
+A \emph{Givens rotation} $G(i, j, \theta)$ in $\R^N$ is the identity
+outside the coordinate plane $(i, j)$ and a plane rotation inside it
+\citep{givens1958computation, golub2013matrix}:
+\begin{equation}
+  G(i, j, \theta)
+  = \eye_N
+  + (\cos\theta - 1)\,(\std_i\std_i^\top + \std_j\std_j^\top)
+  + \sin\theta\,(\std_i\std_j^\top - \std_j\std_i^\top).
+  \label{eq:givens}
+\end{equation}
+Its only entries that differ from the identity are
+$G_{ii} = G_{jj} = \cos\theta$, $G_{ij} = \sin\theta$ and
+$G_{ji} = -\sin\theta$.
+\end{definition}
+
+A Givens rotation is orthogonal, $G G^\top = \eye_N$, and has
+determinant $+1$. Givens introduced these rotations to reduce a matrix
+to triangular form one plane at a time; the turtle uses them for the
+opposite purpose, to rotate a frame one plane at a time while leaving
+every other basis vector untouched.
+
+\begin{proposition}[Frame Rotation]
+\label{prop:rotation}
+If $F$ is the row matrix of an orthonormal frame, then $F' = G(i, j,
+\theta)\,F$ is the row matrix of an orthonormal frame, and its rows are
+\begin{equation}
+  \basis_i' = \cos\theta\,\basis_i + \sin\theta\,\basis_j, \qquad
+  \basis_j' = \cos\theta\,\basis_j - \sin\theta\,\basis_i, \qquad
+  \basis_k' = \basis_k \;\; (k \neq i, j).
+  \label{eq:rowrot}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+$F' F'^\top = G F F^\top G^\top = G G^\top = \eye_N$. Rows $i$ and $j$ of
+$GF$ are the stated combinations by Equation~\eqref{eq:givens}; every
+other row of $G$ is a row of the identity.
+\end{proof}
+
+Equation~\eqref{eq:rowrot} is the whole of the rotation machinery. It
+says that $\basis_i$ rotates toward $\basis_j$ by $\theta$ within the
+plane the two span, $\basis_j$ follows it around, and nothing else
+moves. In three dimensions, a rotation in the plane of two basis
+vectors is a rotation about the third, which is why the named
+three-dimensional rotations are special cases.
+
+%======================================================================
+\section{The TurtleND}
+\label{sec:turtlend}
+%======================================================================
+
+\subsection{State and Conventions}
+
+A \code{TurtleND} in $N \geq 2$ dimensions holds a position
+$\pos \in \R^N$ and an orthonormal frame $\frm$ stored as the rows of
+an $N \times N$ matrix. The basis vectors are named by index
+(Table~\ref{tab:names}). A new turtle sits at the origin with the
+identity frame: $\pos = \mathbf{0}$, $F = \eye_N$. The
+\code{position}, \code{frame}, \code{heading}, \code{left}, \code{up}
+and \code{basis(i)} accessors return copies, so the only way to change
+the turtle is through its methods.
+
+\begin{table}[h]
+\centering
+\caption{Frame conventions. The names are inherited from \code{Turtle3D}.}
+\label{tab:names}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Row} & \textbf{Name} & \textbf{Role} \\
+\midrule
+$\basis_0$ & heading & direction of \op{Move} \\
+$\basis_1$ & left & \\
+$\basis_2$ & up & requires $N \geq 3$ \\
+$\basis_3, \ldots, \basis_{N-1}$ & unnamed & reached through \code{basis(i)} and \code{rotate} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The turtle also carries a pen flag and an optional tape. When
+\code{recording} is set, every \op{Move} appends the new position
+to the tape, so a path can be recovered after the fact. The pen is kept
+for compatibility with \code{Turtle3D} and has no effect on the
+geometry.
+
+\subsection{Operations}
+
+Table~\ref{tab:ops} lists the operations and their definitions. All
+angles in the public interface are in degrees; the implementation
+converts to radians once, at the entry to \code{rotate}. A rotation
+never changes the position and a move never changes the frame.
+
+\begin{table}[h]
+\centering
+\caption{TurtleND operations. $G$ is the Givens rotation of
+Definition~\ref{def:givens}, applied to the frame as in
+Proposition~\ref{prop:rotation}.}
+\label{tab:ops}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Operation} & \textbf{Definition} & \textbf{Plane} \\
+\midrule
+$\op{Move}(d)$ & $\pos \leftarrow \pos + d\,\basis_0$ & \\
+$\op{Rotate}(\theta, i, j)$ & $F \leftarrow G(i, j, \theta)\,F$ & $(\basis_i, \basis_j)$ \\
+$\op{Turn}(\theta)$ & $\op{Rotate}(\theta, 0, 1)$ & heading, left \\
+$\op{Roll}(\theta)$ & $\op{Rotate}(\theta, 1, 2)$ & left, up \\
+$\op{Pitch}(\theta)$ & $\op{Rotate}(-\theta, 0, 2)$ & heading, up \\
+$\op{Yaw}(\theta)$ & $\op{Rotate}(180^\circ - \theta, 0, 1)$ & heading, left \\
+$\op{ToLocal}(\mathbf{g})$ & $\bm{\ell} = F\,(\mathbf{g} - \pos)$ & \\
+$\op{ToGlobal}(\bm{\ell})$ & $\mathbf{g} = \pos + F^\top \bm{\ell}$ & \\
+$\op{Orthonormalize}()$ & $F \leftarrow$ sign-preserving $Q$ of $F^\top = QR$ & \\
+$\op{Orient}(\pos, \mathbf{h}, \mathbf{l})$ & Algorithm~\ref{alg:orient} & \\
+$\op{OrientToward}(\mathbf{d})$ & Algorithm~\ref{alg:toward} & (heading, $\mathbf{d}$) \\
+$\op{ExpandDim}()$ & Algorithm~\ref{alg:expand} & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\op{Rotate} is the one primitive. \op{Turn}, \op{Roll},
+\op{Pitch} and \op{Yaw} are calls to it with fixed plane
+indices and, for \op{Pitch} and \op{Yaw}, a transformed angle.
+The signs and the $180^\circ$ offset are not arbitrary; they are the
+conventions of \code{Turtle3D}, and Section~\ref{sec:compat} explains
+where they come from. \op{Roll} and \op{Pitch} require
+$N \geq 3$ because they involve $\basis_2$. \op{Rotate} rejects
+$i = j$ and indices outside $[0, N)$.
+
+\subsection{Invariants}
+
+\begin{proposition}[Frame Invariant]
+\label{prop:frame}
+\op{Rotate}, and therefore every named rotation, maps an
+orthonormal frame to an orthonormal frame.
+\end{proposition}
+
+\begin{proof}
+Proposition~\ref{prop:rotation}.
+\end{proof}
+
+\begin{proposition}[Coordinate Transform Invertibility]
+\label{prop:coords}
+For every $\mathbf{g} \in \R^N$ and every $\bm{\ell} \in \R^N$,
+\begin{equation*}
+\op{ToGlobal}(\op{ToLocal}(\mathbf{g})) = \mathbf{g}
+\qquad\text{and}\qquad
+\op{ToLocal}(\op{ToGlobal}(\bm{\ell})) = \bm{\ell}.
+\end{equation*}
+\end{proposition}
+
+\begin{proof}
+Let $\bm{\delta} = \mathbf{g} - \pos$. Then
+$\op{ToGlobal}(F\bm{\delta}) = \pos + F^\top F \bm{\delta} = \pos +
+\bm{\delta} = \mathbf{g}$, and
+$\op{ToLocal}(\pos + F^\top\bm{\ell}) = F F^\top \bm{\ell} =
+\bm{\ell}$, since $F^\top F = F F^\top = \eye_N$.
+\end{proof}
+
+\begin{proposition}[Move Commutes with the Frame]
+\label{prop:move}
+\op{Move}$(d)$ followed by \op{Rotate} gives the same position
+as \op{Rotate} followed by \op{Move}$(d)$ if and only if the
+rotation does not involve $\basis_0$.
+\end{proposition}
+
+\begin{proof}
+\op{Move} adds $d\,\basis_0$ to the position. A rotation in a plane
+not containing index $0$ leaves $\basis_0$ fixed, so the two orders add
+the same vector. A rotation in a plane containing index $0$ changes
+$\basis_0$, so the two orders add different vectors unless $d = 0$ or
+$\theta$ is a multiple of $360^\circ$.
+\end{proof}
+
+Proposition~\ref{prop:move} is why the turtle's path is a sequence of
+straight segments joined at the positions where a heading rotation
+occurred. \op{Roll} never changes the path in any dimension;
+\op{Turn}, \op{Pitch} and \op{Yaw} always do.
+
+\subsection{The Local Coordinate System}
+
+The frame gives the turtle a moving coordinate system centered on its
+position. \op{ToLocal} expresses a global point in that system, one
+inner product per basis vector, and \op{ToGlobal} is the inverse
+(Proposition~\ref{prop:coords}). Both are single matrix-vector products
+and cost $O(N^2)$.
+
+Two uses recur. In molecular building, the turtle is placed on an atom
+with its frame aligned to the local bond geometry, and the coordinates
+of nearby atoms are read out in the turtle's frame. The same atom
+positions expressed this way are the same for every residue of the same
+type, regardless of where the residue sits in the protein; this is what
+lets a residue template be built once and placed anywhere. In manifold
+navigation, a gradient or a displacement is taken into the frame with
+\op{ToLocal}, its components are modified independently (kept,
+scaled or zeroed), and the result is taken back out with
+\op{ToGlobal} \citep{suchanek2026waverider}. The frame is the
+device that makes ``the component along the second principal direction''
+a meaningful phrase.
+
+%======================================================================
+\section{Agreement with Turtle3D}
+\label{sec:compat}
+%======================================================================
+
+\code{Turtle3D} stores three named vectors, heading $\mathbf{h}$, left
+$\mathbf{l}$ and up $\mathbf{u}$, and implements each rotation as an
+explicit pair of component updates. Its conventions are the ones that
+were convenient for building molecules in 1990, and \code{TurtleND}
+adopts them so that the two turtles are interchangeable in three
+dimensions. Table~\ref{tab:conventions} lists the four rotations as
+\code{Turtle3D} writes them and the Givens plane and angle that
+reproduce each.
+
+\begin{table}[h]
+\centering
+\caption{The \code{Turtle3D} rotations and their \code{TurtleND}
+equivalents. $c = \cos\alpha$ and $s = \sin\alpha$ for the angle
+$\alpha$ given in the third column.}
+\label{tab:conventions}
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Turtle3D} & \textbf{Update} & \textbf{Angle} $\alpha$ & \textbf{TurtleND} \\
+\midrule
+\code{turn(a)}  & $\mathbf{h}' = c\mathbf{h} + s\mathbf{l}$, $\mathbf{l}' = c\mathbf{l} - s\mathbf{h}$ & $a$ & \code{rotate(a, 0, 1)} \\
+\code{roll(a)}  & $\mathbf{l}' = c\mathbf{l} + s\mathbf{u}$, $\mathbf{u}' = c\mathbf{u} - s\mathbf{l}$ & $a$ & \code{rotate(a, 1, 2)} \\
+\code{pitch(a)} & $\mathbf{h}' = c\mathbf{h} - s\mathbf{u}$, $\mathbf{u}' = c\mathbf{u} + s\mathbf{h}$ & $a$ & \code{rotate(-a, 0, 2)} \\
+\code{yaw(a)}   & $\mathbf{h}' = c\mathbf{h} + s\mathbf{l}$, $\mathbf{l}' = c\mathbf{l} - s\mathbf{h}$ & $180^\circ - a$ & \code{rotate(180 - a, 0, 1)} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three of the four follow directly from Equation~\eqref{eq:rowrot}.
+\code{turn} and \code{roll} are rotations of the first index toward the
+second by the given angle. \code{pitch} rotates the heading toward
+$-\mathbf{u}$, which is a rotation of $\basis_0$ toward $\basis_2$ by
+$-a$. The fourth, \code{yaw}, is a turn by the supplement of the
+angle, and it exists because of how bond angles are defined.
+
+\begin{remark}[Why yaw is $180^\circ - \theta$]
+\label{rem:yaw}
+Place the turtle on atom $A$ heading toward atom $B$, and move the bond
+length so that it stands on $B$. Its heading is now the direction
+$A \to B$. The bond angle $\theta_{ABC}$ is the angle at $B$ between the
+bonds $B \to A$ and $B \to C$, and $B \to A$ is the reverse of the
+heading. To point the heading along $B \to C$, the turtle must turn by
+$180^\circ - \theta_{ABC}$. \code{yaw} takes the bond angle from the
+chemistry tables and does the subtraction, so that building an atom is
+\code{move(length)}, \code{yaw(angle)}, \code{roll(dihedral)} with the
+tabulated values and nothing else. Users who want a plain turn by
+$\theta$ call \code{turn}.
+\end{remark}
+
+\begin{theorem}[Equivalence in Three Dimensions]
+\label{thm:compat}
+For every finite sequence of \op{Move}, \op{Turn},
+\op{Roll}, \op{Pitch} and \op{Yaw} commands with the same
+arguments, \code{TurtleND}$(3)$ started at the identity frame and
+\code{Turtle3D} started at its default frame end at the same position
+with the same heading, left and up vectors, up to floating-point
+rounding.
+\end{theorem}
+
+\begin{proof}
+Both turtles start at $\pos = \mathbf{0}$ with
+$(\mathbf{h}, \mathbf{l}, \mathbf{u}) = (\std_0, \std_1, \std_2)$.
+\op{Move} is the same update in both. For each rotation,
+Table~\ref{tab:conventions} shows that the \code{Turtle3D} component
+updates are Equation~\eqref{eq:rowrot} for the stated plane and angle,
+which is what \code{TurtleND} computes. Both implementations renormalize
+the two changed vectors after each rotation, and renormalization of
+vectors that are already unit length up to rounding changes them only
+by rounding. By induction on the length of the sequence the states
+agree at every step.
+\end{proof}
+
+The test suite of \code{turtlend} checks this theorem over a random
+sequence of 200 commands drawn from all five operations with arguments
+uniform in $[-180, 180]$, comparing position, frame and both coordinate
+transforms at the end of the sequence to a tolerance of $10^{-7}$, and
+separately on every individual operation.
+
+\begin{remark}[Handedness of \op{Orient}]
+\label{rem:handed}
+The theorem is stated for the five movement commands and not for
+\op{Orient}. \code{Turtle3D.orient} completes the frame with a
+cross product, $\mathbf{u} = \mathbf{h} \times \mathbf{l}$, and is
+always right-handed. \code{TurtleND.orient} completes it by
+Gram-Schmidt against the standard basis vectors
+(Algorithm~\ref{alg:orient}), which has no notion of handedness in
+general $N$, and in three dimensions can produce
+$\basis_2 = -\mathbf{h} \times \mathbf{l}$. The frame is orthonormal
+either way. A caller who needs the right-handed completion in three
+dimensions should use \code{Turtle3D}, or check the sign of
+$\langle \basis_2, \mathbf{h} \times \mathbf{l} \rangle$ and negate
+$\basis_2$ if it is negative.
+\end{remark}
+
+%======================================================================
+\section{Frame Construction Algorithms}
+\label{sec:algorithms}
+%======================================================================
+
+The rotations move a frame that already exists. Three further
+operations build or rebuild one.
+
+\subsection{Orient}
+
+\op{Orient} places the turtle at a point and aims its heading and
+left at two other points. This is the operation that puts a turtle on
+an atom: the position is the alpha carbon, the heading point is the
+carbonyl carbon or the beta carbon, and the left point is the nitrogen.
+The remaining $N - 2$ basis vectors are not determined by the inputs
+and are completed by Gram-Schmidt from the standard basis
+\citep{golub2013matrix}.
+
+\begin{algorithm}[H]
+\caption{\op{Orient}$(\pos, \mathbf{h}, \mathbf{l})$}
+\label{alg:orient}
+\begin{algorithmic}[1]
+\Require Position $\pos$, a point $\mathbf{h}$ to head toward, a point $\mathbf{l}$ on the left
+\Ensure Frame $F$ orthonormal with $\basis_0 \parallel \mathbf{h} - \pos$ and $\basis_1$ in the plane of $\basis_0$ and $\mathbf{l} - \pos$
+\State $\basis_0 \leftarrow (\mathbf{h} - \pos) / \norm{\mathbf{h} - \pos}$
+\State $\mathbf{v} \leftarrow (\mathbf{l} - \pos) - \langle \mathbf{l} - \pos, \basis_0 \rangle\,\basis_0$
+\State $\basis_1 \leftarrow \mathbf{v} / \norm{\mathbf{v}}$
+\For{$k = 2, \ldots, N-1$}
+  \State $\mathbf{v} \leftarrow \std_k - \sum_{m < k} \langle \std_k, \basis_m \rangle\,\basis_m$
+  \If{$\norm{\mathbf{v}} < 10^{-12}$} \Comment{$\std_k$ lies in the span of the earlier vectors}
+    \State try $\std_0, \std_1, \ldots$ in turn until one gives $\norm{\mathbf{v}} \geq 10^{-12}$
+  \EndIf
+  \State $\basis_k \leftarrow \mathbf{v} / \norm{\mathbf{v}}$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+The fallback on line 7 is needed. If the heading is aimed along
+$\std_2$, then at $k = 2$ the projection of $\std_2$ onto $\basis_0$
+removes all of it and the residual is zero; another standard basis
+vector must be used instead. The tests include this case. The
+completion is deterministic, which is worth more than any particular
+choice of the extra vectors: the same inputs always produce the same
+frame.
+
+\subsection{Orient Toward}
+
+\op{OrientToward} rotates the heading to a given direction
+$\mathbf{d}$ with a single Givens rotation, and reports the angle it
+rotated through. In WaveRider this is called with a principal direction
+from a local PCA, or with the negative time axis
+(Section~\ref{sec:time}).
+
+\begin{algorithm}[H]
+\caption{\op{OrientToward}$(\mathbf{d})$}
+\label{alg:toward}
+\begin{algorithmic}[1]
+\Require Direction $\mathbf{d} \in \R^N$
+\Ensure $\basis_0 = \mathbf{d} / \norm{\mathbf{d}}$; returns the rotation angle in degrees
+\If{$\norm{\mathbf{d}} < 10^{-12}$} \Return $0$ \EndIf
+\State $\mathbf{d} \leftarrow \mathbf{d} / \norm{\mathbf{d}}$
+\State $c \leftarrow \langle \basis_0, \mathbf{d} \rangle$, clipped to $[-1, 1]$
+\If{$|c| > 1 - 10^{-10}$} \Return $0$ \EndIf \Comment{already parallel or antiparallel}
+\State $\theta \leftarrow \arccos c$
+\State $\mathbf{q} \leftarrow \mathbf{d} - c\,\basis_0$;\quad $\mathbf{q} \leftarrow \mathbf{q} / \norm{\mathbf{q}}$ \Comment{unit component of $\mathbf{d}$ perpendicular to heading}
+\State $j \leftarrow \arg\max_{m \geq 1} |\langle \basis_m, \mathbf{q} \rangle|$ \Comment{basis vector most aligned with $\mathbf{q}$}
+\State $\basis_j \leftarrow \mathbf{q}$ \Comment{temporary: frame is no longer orthonormal}
+\State $F \leftarrow G(0, j, \theta)\,F$ \Comment{now $\basis_0 = c\,\basis_0 + \sin\theta\,\mathbf{q} = \mathbf{d}$}
+\State \op{Orthonormalize}$()$
+\State \Return $\theta$ in degrees
+\end{algorithmic}
+\end{algorithm}
+
+The rotation is in the plane spanned by the current heading and
+$\mathbf{d}$, which is the plane of $\basis_0$ and $\mathbf{q}$. That
+plane is not in general spanned by any two basis vectors of the frame,
+so the algorithm swaps $\mathbf{q}$ into the slot of the basis vector
+it most resembles, rotates, and then repairs the frame. Because
+$\basis_0$ comes first in the Gram-Schmidt order of
+\op{Orthonormalize}, the repair leaves the new heading exactly
+$\mathbf{d}$ and adjusts the other vectors. The antiparallel case
+$c = -1$ returns without rotating; the plane of rotation is undefined
+there, and the caller who wants the turtle turned around has a whole
+$(N-1)$-sphere of choices and must make one.
+
+\subsection{Orthonormalize}
+
+Each rotation renormalizes the two basis vectors it changes but does
+not restore their orthogonality to each other or to the rest of the
+frame. \op{Orthonormalize} rebuilds the whole frame from a QR
+decomposition of $F^\top$, whose $Q$ factor is the Gram-Schmidt
+orthonormalization of the basis vectors in order $0, 1, \ldots, N-1$
+\citep{golub2013matrix}. A QR routine is free to return $-\mathbf{q}_k$
+in place of $\mathbf{q}_k$, so each column is compared with the basis
+vector it replaces and negated if the inner product is negative. The
+result is the orthonormal frame nearest to the drifted one in the sense
+that $\basis_0$ keeps its direction exactly, $\basis_1$ keeps its
+component orthogonal to $\basis_0$, and so on down the list.
+
+\subsection{Expand Dimension}
+\label{sec:expand}
+
+\op{ExpandDim} grows a live turtle from $N$ to $N + 1$ dimensions
+without disturbing anything it has done so far. The position gains a
+zero coordinate, each existing basis vector gains a zero component, and
+the new basis vector is the new standard axis $\std_N$.
+
+\begin{algorithm}[H]
+\caption{\op{ExpandDim}$()$}
+\label{alg:expand}
+\begin{algorithmic}[1]
+\Ensure Turtle in $\R^{N+1}$; returns the index $N$ of the new axis
+\State $\pos \leftarrow (\pos, 0)$
+\State $F \leftarrow \begin{pmatrix} F & \mathbf{0} \\ \mathbf{0}^\top & 1 \end{pmatrix}$
+\State $N \leftarrow N + 1$
+\State \Return $N - 1$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{proposition}
+\label{prop:expand}
+\op{ExpandDim} maps an orthonormal frame to an orthonormal frame,
+and the original $N$ basis vectors are unchanged in their first $N$
+components.
+\end{proposition}
+
+\begin{proof}
+The new matrix is block diagonal with orthogonal blocks $F$ and $(1)$,
+so it is orthogonal. The upper-left block is $F$.
+\end{proof}
+
+The new axis is the only basis vector with a nonzero last component,
+so every existing rotation and move of the turtle takes place in the
+original $N$-dimensional subspace until a rotation involving the new
+index is issued. The operation is $O(N^2)$ and is a copy, not a
+recomputation.
+
+%======================================================================
+\section{Numerical Behavior}
+\label{sec:numerics}
+%======================================================================
+
+\subsection{Cost}
+
+Table~\ref{tab:cost} gives the cost of each operation. A rotation
+touches two rows of the frame and costs $O(N)$; this is the property
+that makes the Givens formulation attractive at large $N$, since a
+general rotation matrix applied to the frame would cost $O(N^3)$. The
+coordinate transforms are one matrix-vector product each.
+
+\begin{table}[h]
+\centering
+\caption{Cost per operation for a turtle in $N$ dimensions.}
+\label{tab:cost}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Operation} & \textbf{Cost} & \textbf{Notes} \\
+\midrule
+\op{Move} & $O(N)$ & \\
+\op{Rotate} and named rotations & $O(N)$ & two rows, two norms \\
+\op{ToLocal}, \op{ToGlobal} & $O(N^2)$ & one matrix-vector product \\
+\op{Orient} & $O(N^3)$ & Gram-Schmidt over $N - 2$ vectors \\
+\op{OrientToward} & $O(N^3)$ & one rotation, one \op{Orthonormalize} \\
+\op{Orthonormalize} & $O(N^3)$ & QR of $F^\top$ \\
+\op{ExpandDim} & $O(N^2)$ & copy into a larger array \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Drift}
+
+In exact arithmetic the frame is orthonormal forever. In floating
+point each rotation introduces rounding of order the machine epsilon,
+about $2 \times 10^{-16}$ for double precision, into the two rows it
+changes. Renormalizing those rows removes the error in their lengths
+and leaves the error in their mutual angle, and in their angles with
+the rest of the frame, to accumulate. The accumulation is a random
+walk, so after $M$ rotations the departure from orthogonality is of
+order $\sqrt{M}\,\epsilon$ in the typical case and $M\epsilon$ in the
+worst case. At $M = 10^6$ rotations that is between $10^{-13}$ and
+$10^{-10}$. \code{Turtle3D} has built molecules for thirty-six years
+with this scheme and no orthonormalization step at all, because a
+molecule takes a few hundred rotations. A long navigation in $N$
+dimensions can call \op{Orthonormalize} every few thousand steps
+at a cost that is negligible against a single PCA of the same size.
+
+\subsection{Determinism}
+
+Every operation is deterministic. \op{Orient} completes the frame
+from the standard basis in a fixed order, \op{OrientToward} picks
+its rotation plane by a deterministic argmax, and
+\op{Orthonormalize} resolves the QR sign ambiguity against the
+prior frame. No random numbers are drawn anywhere in the package. A
+sequence of commands on a given start state produces the same frame on
+every run, which is a requirement for the reproducibility of anything
+built on top.
+
+%======================================================================
+\section{Applications}
+\label{sec:applications}
+%======================================================================
+
+\subsection{Building Molecules}
+\label{sec:molecules}
+
+The original purpose of the turtle was to build protein structures
+from internal coordinates. Each atom after the first three is placed by
+three numbers: the length of the bond that attaches it, the angle that
+bond makes with the previous one, and the dihedral angle about the
+previous bond. A turtle standing on the previous atom, heading along
+the previous bond, with its left vector in the plane of the previous
+two bonds, places the new atom by
+\begin{center}
+\code{roll(dihedral)}, \quad \code{yaw(bond\_angle)}, \quad \code{move(bond\_length)},
+\end{center}
+and is then standing on the new atom, ready for the next
+(Remark~\ref{rem:yaw}). No global coordinates enter at any point. The
+same three commands build a peptide backbone, a side chain, or a
+disulfide bridge, and the shape of the molecule is set by the dihedral
+angles alone once the lengths and angles are fixed at their
+tabulated values.
+
+\code{Turtle3D} adds two conventions for proteins. A turtle on an alpha
+carbon can be in the \emph{backbone} orientation, heading toward the
+carbonyl carbon with the nitrogen on its left, or the \emph{side-chain}
+orientation, heading toward the beta carbon with the nitrogen on its
+left. \code{orient\_at\_residue} places the turtle in either
+orientation from the atoms of a residue, and \code{bbone\_to\_schain}
+and \code{schain\_to\_bbone} convert between them with a fixed sequence
+of four rotations, since the tetrahedral geometry at the alpha carbon is
+the same for every residue. proteusPy uses this to build a disulfide
+bond in the turtle's local frame from its five dihedral angles and then
+transform it into the frame of any residue in the Protein Data Bank
+\citep{suchanek2024proteuspy, suchanek2026disulfide}.
+
+\subsection{Navigating an Embedding Space}
+\label{sec:navigation}
+
+WaveRider uses \code{TurtleND} as the moving coordinate system for a
+walk on a data manifold in $\R^N$ \citep{suchanek2026waverider}. At
+each position it takes the $k$ nearest embedding vectors, computes
+their covariance, and reads off the principal directions and
+eigenvalues. The frame is aligned so that $\basis_0$ is the first
+principal direction, $\basis_1$ the second, and so on; the number $d$
+of eigenvalues needed to reach a fixed fraction of the variance is the
+local intrinsic dimensionality. A step is then taken by bringing the
+descent direction into the frame with \op{ToLocal}, zeroing the
+components with index $d$ and above, scaling the rest by their
+eigenvalues, and returning with \op{ToGlobal}. The turtle supplies
+the frame, the transforms, and the rotations that steer between
+principal directions; the covariance, the thresholds and the objective
+belong to the walker, which is why they are not in this package. The
+rest of that method, and its use in estimating intrinsic dimensionality
+and sizing classifiers, is in the WaveRider article.
+
+\subsection{Adding a Time Axis}
+\label{sec:time}
+
+\op{ExpandDim} exists for a corpus that has both a semantic
+embedding and a date. Embedding the text gives a turtle in $\R^N$;
+appending a standardized fractional year as coordinate $N$ gives a
+turtle in $\R^{N+1}$ that can be steered in time as easily as in
+meaning. \code{orient\_in\_time} is the convenience call
+$\op{OrientToward}(-\std_N)$. The sign is a convention of the
+corpus it was written for, whose time coordinate is a $z$-score that
+decreases toward the present, so that ``forward in time'' is the
+negative direction of the axis. Callers with the opposite convention
+pass $+\std_N$ to \op{OrientToward} directly.
+
+%======================================================================
+\section{Implementation}
+\label{sec:implementation}
+%======================================================================
+
+\code{turtlend} is a Python package on PyPI with a single runtime
+dependency, NumPy \citep{harris2020numpy}. It provides three classes.
+\code{TurtleND} is the $N$-dimensional turtle of
+Section~\ref{sec:turtlend}; its frame is an $N \times N$ NumPy array of
+doubles with basis vectors as rows, and \op{Rotate} is implemented
+as Equation~\eqref{eq:rowrot} on two rows followed by renormalization.
+\code{Turtle3D} is the three-dimensional turtle with its original
+capitalized property names, its \code{Vector3D} return types and its
+residue-building methods, kept intact so that proteusPy code runs
+unchanged. \code{Vector3D} is the small vector class \code{Turtle3D}
+uses, with helper functions for angles, dihedrals and distances. The
+three modules total about 1{,}600 lines including docstrings, of which
+\code{TurtleND} is about 500.
+
+The tests cover every operation individually, the 200-step random
+agreement check of Theorem~\ref{thm:compat}, the degenerate cases of
+\op{Orient} and \op{OrientToward}, and the tape. Coverage is
+held above 80 percent. The package requires Python 3.12 or 3.13,
+is licensed BSD-3-Clause, and has a documentation site with a
+frame-conventions page and an API reference at
+\url{https://flux-frontiers.github.io/turtlend/}.
+
+%======================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+%======================================================================
+
+The turtle is a small object: a point, $N$ unit vectors, and one
+rotation primitive. Its value is that every operation is expressed in
+its own frame, so the description of a path, a molecule or a walk on a
+manifold does not change when the ambient coordinates do. The
+three-dimensional version has been placing atoms since 1990 and the
+$N$-dimensional version is a strict generalization of it, with the
+1990 conventions preserved so that the two agree to $10^{-7}$ after
+200 random commands. The whole of the $N$-dimensional turtle fits in
+about 500 lines of NumPy.
+
+\bibliographystyle{plainnat}
+\bibliography{turtlend}
+
+\end{document}

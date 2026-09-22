@@ -22,7 +22,7 @@ packages = [{ include = "turtlend", from = "src" }]
 
 [project]
 name = "turtlend"
-version = "0.1.0"
+version = "0.1.1"
 description = "A turtle that carries its own orthonormal frame through 3- or N-dimensional space"
 readme = "README.md"
 license = "BSD-3-Clause"

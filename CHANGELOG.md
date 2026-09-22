@@ -6,6 +6,26 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-09-21
+
+### Added
+
+- `articles/turtlend.tex`, an article describing the approach and the
+  algorithms: the frame and its Givens rotations, the operations and their
+  invariants, the conventions that make `TurtleND(3)` agree with `Turtle3D`,
+  the `orient`, `orient_toward`, `orthonormalize` and `expand_dim` algorithms,
+  cost and drift, and the two applications. With its bibliography and a
+  compiled PDF.
+- README badges for PyPI, Python versions, license, the tests and docs
+  workflows, Poetry, ORCID and a DOI placeholder, and a Cite section that
+  points to `CITATION.cff` and gives the BibTeX entry.
+
+### Changed
+
+- The Zenodo DOI is a `zenodo.XXXXXXX` placeholder in the README badge, the
+  README BibTeX and a commented line in `CITATION.cff`, to be replaced by the
+  concept DOI once Zenodo archives a release.
+
 ## [0.1.0] - 2026-09-21
 
 ### Added
