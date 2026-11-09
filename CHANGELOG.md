@@ -6,7 +6,15 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `CONTRIBUTING.md`, with how to report problems and submit changes.
+
 ### Changed
+
+- `articles/turtlend.bib` cites the WaveRider software by its Zenodo DOI
+  instead of a manuscript under review, and the article no longer refers to
+  a WaveRider article.
 
 - The `zenodo.XXXXXXX` placeholder in the README badge, the README BibTeX and
   `CITATION.cff` is replaced by the Zenodo concept DOI,
