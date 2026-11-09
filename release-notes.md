@@ -1,35 +1,23 @@
-# Release Notes -- v0.1.1
+# Release Notes -- v0.1.2
 
-> Released: 2026-09-21
+> Released: 2026-11-08
 
-This release adds the article that describes the turtle, and the badges and
-citation section the README was missing. The code is unchanged from 0.1.0.
+This release is documentation only. The code is unchanged from 0.1.1.
 
 ## What changed
 
-**The article.** `articles/turtlend.tex` is a twelve-page description of the
-approach and the algorithms. It defines the orthonormal frame and the Givens
-rotation, gives the operations and the invariants they preserve with proofs,
-explains the `Turtle3D` conventions that `TurtleND` inherits (including why
-`yaw` rotates by `180 - a`), and gives pseudocode for `orient`,
-`orient_toward`, `orthonormalize` and `expand_dim`. A section on numerical
-behavior gives the cost of each operation and the size of the orthogonality
-drift after many rotations. The bibliography and a compiled PDF ship with it.
-It also records one difference the tests do not cover: `TurtleND.orient` in
-three dimensions can produce a left-handed frame, where `Turtle3D.orient`
-always produces a right-handed one.
+**Contributing guide.** `CONTRIBUTING.md` says how to report a problem and
+how to submit a change, as the JOSS review checklist requires.
 
-**README badges and citation.** The README carries badges for PyPI, Python
-versions, license, the tests and docs workflows, Poetry and ORCID, and a Cite
-section that points to `CITATION.cff` and gives the BibTeX entry. The DOI
-badge and the BibTeX `doi` field hold a `zenodo.XXXXXXX` placeholder, as does a
-commented line in `CITATION.cff`, until Zenodo archives a release and mints the
-concept DOI.
+**Citations.** The article's bibliography cites the WaveRider software by its
+Zenodo DOI instead of a manuscript under review, and the article no longer
+refers to a WaveRider article. The README badge, the README BibTeX and
+`CITATION.cff` carry the Zenodo concept DOI, `10.5281/zenodo.22886555`, in
+place of a placeholder.
 
 ## Upgrading
 
-Run `pip install --upgrade turtlend`. No code changed, so nothing needs to be
-done.
+Nothing to do.
 
 ---
 

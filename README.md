@@ -112,7 +112,7 @@ under "Cite this repository". The equivalent BibTeX entry is:
 @software{suchanek2026turtlend,
   author  = {Suchanek, Eric G.},
   title   = {turtlend: Orthonormal-Frame Turtles in 3 and N Dimensions},
-  version = {0.1.1},
+  version = {0.1.2},
   year    = {2026},
   url     = {https://github.com/Flux-Frontiers/turtlend},
   doi     = {10.5281/zenodo.22886555},
