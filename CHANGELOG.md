@@ -6,6 +6,16 @@ project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **An Art Techno logo.** The frame: the turtle's orthonormal frame, three
+  axes leaving a die, with the right-angle trail it walked behind it, and the
+  tagline A TURTLE IN N DIMENSIONS. `scripts/build_logo.py` draws the mark, a
+  64 px icon and a banner as SVG under `assets/` and writes the PNGs. The
+  README shows the banner at the top, by absolute raw URL so PyPI shows it
+  too, and the docs site shows the icon as its header logo and favicon
+  (`docs/assets/`, set in `mkdocs.yml`). No code changes.
+
 ## [0.1.2] - 2026-11-08
 
 ### Added

@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Flux-Frontiers/turtlend/main/assets/turtlend_banner.png" alt="turtlend" width="720"/>
+</p>
+
 # turtlend
 
 [![PyPI](https://img.shields.io/pypi/v/turtlend.svg)](https://pypi.org/project/turtlend/)
